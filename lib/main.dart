@@ -49,6 +49,7 @@ class Grid {
 
 class _HomePageState extends State<HomePage> {
   var grids = <Grid>[];
+  var sidelen = 0.0;
   bool gameLost = false;
   bool gameWon = false;
   bool firstMined = true;
@@ -79,7 +80,7 @@ class _HomePageState extends State<HomePage> {
     for (var i = 0; i < 100; i++) {
       var grid = Grid(i ~/ 10, i % 10);
       grids.add(grid);
-      if (Random().nextDouble() <= 0.15) {
+      if (Random().nextDouble() <= 0.2) {
         grid.hasMine = true;
       }
     }
@@ -155,34 +156,49 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    var size = MediaQuery.of(context).size;
+    var w = size.width, h = size.height;
+    sidelen = min(w, h) / 10;
+
     return Scaffold(
-      body: Row(
-        children: [
-          SizedBox(
-            height: 600,
-            width: 600,
-            child: Container(
-              decoration: BoxDecoration(
-                  border: Border.all(
-                      color: Theme.of(context).colorScheme.primaryContainer)),
-              child: _getGrids(context),
-            ),
-          ),
-          Expanded(
-            child: Center(
-                child: ElevatedButton.icon(
-                    icon: _getButtonIcon(),
-                    style: ButtonStyle(
-                        backgroundColor: MaterialStatePropertyAll(
-                            Theme.of(context).colorScheme.primary),
-                        iconColor:
-                            const MaterialStatePropertyAll(Colors.white)),
-                    onPressed: _newGame,
-                    label: _getButtonText())),
-          )
-        ],
+      body: Transform.rotate(
+        angle: 0,
+        child: _rowOrColumn(context, size),
       ),
     );
+  }
+
+  Widget _rowOrColumn(BuildContext context, Size size) {
+    var children = [
+      SizedBox(
+        height: sidelen * 10,
+        width: sidelen * 10,
+        child: Container(
+          decoration: BoxDecoration(
+              border: Border.all(
+                  color: Theme.of(context).colorScheme.primaryContainer)),
+          child: _getGrids(context),
+        ),
+      ),
+      Expanded(
+        child: Center(
+            child: Transform.rotate(
+          angle: 0,
+          child: ElevatedButton.icon(
+              icon: _getButtonIcon(),
+              style: ButtonStyle(
+                  backgroundColor: MaterialStatePropertyAll(
+                      Theme.of(context).colorScheme.primary),
+                  iconColor: const MaterialStatePropertyAll(Colors.white)),
+              onPressed: _newGame,
+              label: _getButtonText()),
+        )),
+      )
+    ];
+    if (size.height < size.width) {
+      return Row(children: children);
+    }
+    return Column(children: children);
   }
 
   Icon _getButtonIcon() {
@@ -219,14 +235,14 @@ class _HomePageState extends State<HomePage> {
                     Border.all(color: Theme.of(context).colorScheme.secondary),
                 borderRadius: const BorderRadius.all(Radius.circular(2.0))),
             child: TextButton(
-                key: Key("${grid.x}|${grid.y}"),
-                onPressed: () {
-                  _press(grid);
-                },
-                onLongPress: () {
-                  _longPress(grid);
-                },
-                child: _getGridWidget(grid)),
+              onPressed: () {
+                _press(grid);
+              },
+              onLongPress: () {
+                _longPress(grid);
+              },
+              child: _getGridWidget(grid),
+            ),
           )),
       ],
     );
@@ -300,9 +316,17 @@ class _HomePageState extends State<HomePage> {
     } else if (grid.flagged) {
       return const Icon(Icons.flag);
     } else {
-      return const Text("<>",
-          textAlign: TextAlign.center,
-          style: TextStyle(fontWeight: FontWeight.bold));
+      // return const Icon(Icons.circle);
+      return Text(
+        "<>",
+        softWrap: false,
+        overflow: TextOverflow.visible,
+        style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.primary
+            ),
+        textAlign: TextAlign.left,
+      );
     }
   }
 
